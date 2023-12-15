@@ -23,6 +23,7 @@ from jupyter_core.paths import jupyter_data_dir, jupyter_runtime_dir, secure_wri
 from traitlets import Bool, CaselessStrEnum, Instance, Integer, Type, Unicode, observe
 from traitlets.config import LoggingConfigurable, SingletonConfigurable
 
+from .iant_debug import iant_debug
 from .localinterfaces import localhost
 from .utils import _filefind
 
@@ -404,6 +405,7 @@ class ConnectionFileMixin(LoggingConfigurable):
         connect_info : dict
             dictionary of connection information.
         """
+        iant_debug("get_connection_info")
         info = {
             "transport": self.transport,
             "ip": self.ip,
@@ -496,6 +498,8 @@ class ConnectionFileMixin(LoggingConfigurable):
         """Write connection info to JSON dict in self.connection_file."""
         if self._connection_file_written and os.path.exists(self.connection_file):
             return
+        #import pdb; pdb.set_trace()
+        iant_debug("write_connection_file")
 
         self.connection_file, cfg = write_connection_file(
             self.connection_file,
@@ -527,6 +531,7 @@ class ConnectionFileMixin(LoggingConfigurable):
             Path to connection file to load.
             If unspecified, use self.connection_file
         """
+        iant_debug("load_connection_file")
         if connection_file is None:
             connection_file = self.connection_file
         self.log.debug("Loading connection file %s", connection_file)
@@ -546,6 +551,7 @@ class ConnectionFileMixin(LoggingConfigurable):
             Dictionary containing connection_info.
             See the connection_file spec for details.
         """
+        iant_debug("load_connection_info")
         self.transport = info.get("transport", self.transport)
         self.ip = info.get("ip", self._ip_default())  # type:ignore[assignment]
 

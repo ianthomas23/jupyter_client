@@ -37,6 +37,7 @@ from .asynchronous import AsyncKernelClient
 from .blocking import BlockingKernelClient
 from .client import KernelClient
 from .connect import ConnectionFileMixin
+from .iant_debug import iant_debug
 from .managerabc import KernelManagerABC
 from .provisioning import KernelProvisionerBase
 from .provisioning import KernelProvisionerFactory as KPF  # noqa
@@ -96,6 +97,21 @@ def in_pending_state(method: F) -> F:
             raise e
 
     return t.cast(F, wrapper)
+
+
+class DependentKernelManager(ConnectionFileMixin):
+    """Manages a kernel that isn't a complete kernel but uses another
+    kernel with the shell_port changed.
+    """
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
+        iant_debug(f"DependentKernelManager.__init__ {kwargs['kernel_name']}")
+
+        import pdb; pdb.set_trace()
+
+    def start_kernel(self, **kw: t.Any) -> None:
+        iant_debug(f"DependentKernelManager.start_kernel {kw}")
+
+
 
 
 class KernelManager(ConnectionFileMixin):
@@ -392,11 +408,16 @@ class KernelManager(ConnectionFileMixin):
         # assigning Traitlets Dicts to Dict make mypy unhappy but is ok
         self._launch_args = kw.copy()  # type:ignore [assignment]
         if self.provisioner is None:  # will not be None on restarts
+            iant_debug("KernelManager._async_pre_start_kernel about to create/get provisioner")
+            iant_debug(f"  KPF {KPF}")
+            iant_debug(f"  parent {self.parent}")
+            iant_debug(f"  kernel_spec {self.kernel_spec}")
             self.provisioner = KPF.instance(parent=self.parent).create_provisioner_instance(
                 self.kernel_id,
                 self.kernel_spec,
                 parent=self,
             )
+            iant_debug(f"  provisioner is {self.provisioner}")
         kw = await self.provisioner.pre_launch(**kw)
         kernel_cmd = kw.pop("cmd")
         return kernel_cmd, kw

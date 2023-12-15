@@ -14,6 +14,7 @@ else:  # pragma: no cover
 
 from traitlets.config import SingletonConfigurable, Unicode, default
 
+from ..iant_debug import iant_debug
 from .provisioner_base import KernelProvisionerBase
 
 
@@ -86,6 +87,8 @@ class KernelProvisionerFactory(SingletonConfigurable):
         If the provisioner is found to not exist (not registered via entry_points),
         `ModuleNotFoundError` is raised.
         """
+        iant_debug(f"KernelProvisioningFactory.create_provisioner_instance")
+        iant_debug(f"  kernel_spec {dir(kernel_spec)}")
         provisioner_cfg = self._get_provisioner_config(kernel_spec)
         provisioner_name = str(provisioner_cfg.get("provisioner_name"))
         if not self._check_availability(provisioner_name):

@@ -6,6 +6,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import socket
 import typing as t
 import uuid
@@ -18,8 +19,9 @@ from traitlets.config.configurable import LoggingConfigurable
 from traitlets.utils.importstring import import_item
 
 from .connect import KernelConnectionInfo
+from .iant_debug import iant_debug
 from .kernelspec import NATIVE_KERNEL_NAME, KernelSpecManager
-from .manager import KernelManager
+from .manager import DependentKernelManager, KernelManager
 from .utils import ensure_async, run_sync, utcnow
 
 
@@ -75,14 +77,26 @@ class MultiKernelManager(LoggingConfigurable):
         return self._create_kernel_manager_factory()
 
     def _create_kernel_manager_factory(self) -> t.Callable:
+        iant_debug(f"MultiKernelManager._create_kernel_manager_factory {self} {self.kernel_manager_class}")
+
         kernel_manager_ctor = import_item(self.kernel_manager_class)
+        iant_debug(f"kernel_manager_ctor {kernel_manager_ctor}")
 
         def create_kernel_manager(*args: t.Any, **kwargs: t.Any) -> KernelManager:
+            iant_debug(f"XXX args {args}")
+            iant_debug(f"XXX kwargs {kwargs}")
             if self.shared_context:
                 if self.context.closed:
                     # recreate context if closed
                     self.context = self._context_default()
                 kwargs.setdefault("context", self.context)
+
+            # Here is where I switch to DependentKernelManager
+            #kernel_name = kwargs["kernel_name"]
+            #if re.match(".*:\d+$", kernel_name):
+            #    km = DependentKernelManager(*args, **kwargs)
+            #    return km
+
             km = kernel_manager_ctor(*args, **kwargs)
             return km
 
@@ -228,6 +242,7 @@ class MultiKernelManager(LoggingConfigurable):
     async def _add_kernel_when_ready(
         self, kernel_id: str, km: KernelManager, kernel_awaitable: t.Awaitable
     ) -> None:
+        iant_debug(f"_add_kernel_when_ready {kernel_id} {km} {kernel_awaitable}")
         try:
             await kernel_awaitable
             self._kernels[kernel_id] = km
@@ -259,6 +274,26 @@ class MultiKernelManager(LoggingConfigurable):
 
         The kernel ID for the newly started kernel is returned.
         """
+
+
+        iant_debug(f"_async_start_kernel {kernel_name}")
+        iant_debug(f"  cwd {kwargs['cwd']}")
+        env = kwargs["env"]
+        if 1:
+            k = "JPY_SESSION_NAME"
+            iant_debug(f"  {k}: {env[k]}")
+        else:
+            for k in sorted(env.keys()):
+                iant_debug(f"  {k}: {env[k]}")
+
+        #import traceback
+        #s = traceback.extract_stack()
+        #s = s.format()
+        #for item in s:
+        #    iant_debug(f"STACK: {item}")
+
+
+
         km, kernel_name, kernel_id = self.pre_start_kernel(kernel_name, kwargs)
         if not isinstance(km, KernelManager):
             self.log.warning(  # type:ignore[unreachable]

@@ -8,6 +8,7 @@ import sys
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from ..connect import KernelConnectionInfo, LocalPortCache
+from ..iant_debug import iant_debug
 from ..launcher import launch_kernel
 from ..localinterfaces import is_local_ip, local_ips
 from .provisioner_base import KernelProvisionerBase
@@ -163,7 +164,13 @@ class LocalProvisioner(KernelProvisionerBase):  # type:ignore[misc]
         Returns the updated kwargs.
         """
 
+        iant_debug("LocalProvisioner.pre_launch kwargs")
+        #env = kwargs["env"]
+        #for k in sorted(env.keys()):
+        #    iant_debug(f"  {k}: {env[k]}")
+
         # This should be considered temporary until a better division of labor can be defined.
+
         km = self.parent
         if km:
             if km.transport == "tcp" and not is_local_ip(km.ip):
@@ -206,6 +213,9 @@ class LocalProvisioner(KernelProvisionerBase):  # type:ignore[misc]
 
     async def launch_kernel(self, cmd: List[str], **kwargs: Any) -> KernelConnectionInfo:
         """Launch a kernel with a command."""
+
+        iant_debug("LocalProvisioner.launch_kernel")
+
         scrubbed_kwargs = LocalProvisioner._scrub_kwargs(kwargs)
         self.process = launch_kernel(cmd, **scrubbed_kwargs)
         pgid = None
