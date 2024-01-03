@@ -654,6 +654,7 @@ class ConnectionFileMixin(LoggingConfigurable):
         self, channel: str, identity: bytes | None = None
     ) -> zmq.sugar.socket.Socket:
         """Create a zmq Socket and connect it to the kernel."""
+        #iant_debug(f"_create_connected_socket {channel} {identity}")
         url = self._make_url(channel)
         socket_type = channel_socket_types[channel]
         self.log.debug("Connecting to: %s", url)

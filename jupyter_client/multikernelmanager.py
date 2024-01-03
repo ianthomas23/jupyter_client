@@ -19,9 +19,10 @@ from traitlets.config.configurable import LoggingConfigurable
 from traitlets.utils.importstring import import_item
 
 from .connect import KernelConnectionInfo
+from .dependentkernelmanager import DependentKernelManager
 from .iant_debug import iant_debug
 from .kernelspec import NATIVE_KERNEL_NAME, KernelSpecManager
-from .manager import DependentKernelManager, KernelManager
+from .manager import KernelManager
 from .utils import ensure_async, run_sync, utcnow
 
 
@@ -91,11 +92,16 @@ class MultiKernelManager(LoggingConfigurable):
                     self.context = self._context_default()
                 kwargs.setdefault("context", self.context)
 
-            # Here is where I switch to DependentKernelManager
-            #kernel_name = kwargs["kernel_name"]
-            #if re.match(".*:\d+$", kernel_name):
-            #    km = DependentKernelManager(*args, **kwargs)
-            #    return km
+
+            iant_botch_shell_port = kwargs.pop("IANT_BOTCH_SHELL_PORT", None)
+            if iant_botch_shell_port:  # string
+                iant_debug(f"ZZZ shell_port {iant_botch_shell_port} need DependentKernelManager")
+                #import pdb; pdb.set_trace()
+                kwargs["shell_port"] = int(iant_botch_shell_port)
+                # parent kernel manager?
+                km = DependentKernelManager(*args, **kwargs)
+                return km
+
 
             km = kernel_manager_ctor(*args, **kwargs)
             return km
@@ -219,6 +225,19 @@ class MultiKernelManager(LoggingConfigurable):
         constructor_kwargs = {}
         if self.kernel_spec_manager:
             constructor_kwargs["kernel_spec_manager"] = self.kernel_spec_manager
+
+
+        # Botch. Want to read something from the env? Anywhere just for demo purposes.
+        #import pdb; pdb.set_trace()
+        # Could just use JPY_SESSION_NAME as can get it directly here
+        iant_botch_shell_port = kwargs['env'].get("IANT_BOTCH_SHELL_PORT")
+        if iant_botch_shell_port:
+            constructor_kwargs["IANT_BOTCH_SHELL_PORT"] = iant_botch_shell_port
+        conn_info = kwargs['env'].get("IANT_BOTCH_CONNECTION_INFO")
+        if conn_info:
+            constructor_kwargs["IANT_BOTCH_CONNECTION_INFO"] = conn_info
+
+
         km = self.kernel_manager_factory(
             connection_file=os.path.join(self.connection_dir, "kernel-%s.json" % kernel_id),
             parent=self,

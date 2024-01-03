@@ -101,6 +101,7 @@ class KernelProvisionerFactory(SingletonConfigurable):
         )
         provisioner_class = self.provisioners[provisioner_name].load()
         provisioner_config = provisioner_cfg.get("config")
+        iant_debug(f"  provisioner_config {provisioner_config}")
         provisioner: KernelProvisionerBase = provisioner_class(
             kernel_id=kernel_id, kernel_spec=kernel_spec, parent=parent, **provisioner_config
         )

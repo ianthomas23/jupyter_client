@@ -38,6 +38,7 @@ from .blocking import BlockingKernelClient
 from .client import KernelClient
 from .connect import ConnectionFileMixin
 from .iant_debug import iant_debug
+#from .stream import as_zmqstream
 from .managerabc import KernelManagerABC
 from .provisioning import KernelProvisionerBase
 from .provisioning import KernelProvisionerFactory as KPF  # noqa
@@ -97,21 +98,6 @@ def in_pending_state(method: F) -> F:
             raise e
 
     return t.cast(F, wrapper)
-
-
-class DependentKernelManager(ConnectionFileMixin):
-    """Manages a kernel that isn't a complete kernel but uses another
-    kernel with the shell_port changed.
-    """
-    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        iant_debug(f"DependentKernelManager.__init__ {kwargs['kernel_name']}")
-
-        import pdb; pdb.set_trace()
-
-    def start_kernel(self, **kw: t.Any) -> None:
-        iant_debug(f"DependentKernelManager.start_kernel {kw}")
-
-
 
 
 class KernelManager(ConnectionFileMixin):
@@ -432,6 +418,7 @@ class KernelManager(ConnectionFileMixin):
         `**kw` : optional
              keyword arguments that were used in the kernel process's launch.
         """
+        iant_debug("KernelManager._async_post_start_kernel")
         self.start_restarter()
         self._connect_control_socket()
         assert self.provisioner is not None
