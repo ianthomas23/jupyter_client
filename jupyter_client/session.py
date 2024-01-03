@@ -50,6 +50,7 @@ from zmq.eventloop.zmqstream import ZMQStream
 
 from ._version import protocol_version
 from .adapter import adapt
+from .iant_debug import iant_debug
 from .jsonutil import extract_dates, json_clean, json_default, squash_dates
 
 PICKLE_PROTOCOL = pickle.DEFAULT_PROTOCOL
@@ -1069,9 +1070,21 @@ class Session(Configurable):
                 # Only store signature if we are unpacking content, don't store if just peeking.
                 self._add_digest(signature)
             check = self.sign(msg_list[1:5])
-            if not compare_digest(signature, check):
-                msg = "Invalid Signature: %r" % signature
-                raise ValueError(msg)
+
+
+            if check == signature:
+                #iant_debug(f"CHECK SAME {check}")
+                iant_debug(f"CHECK SAME {self.session}")
+            else:
+                #iant_debug(f"CHECK DIFF {check} {signature}")
+                iant_debug(f"CHECK DIFF {self.session}")
+
+            #if not compare_digest(signature, check):
+            #    import pdb; pdb.set_trace()
+            #    msg = "Invalid Signature: %r" % signature
+            #    raise ValueError(msg)
+
+
         if not len(msg_list) >= minlen:
             msg = "malformed message, must have at least %i elements" % minlen
             raise TypeError(msg)

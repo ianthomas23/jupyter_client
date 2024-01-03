@@ -19,7 +19,7 @@ from traitlets.config.configurable import LoggingConfigurable
 from traitlets.utils.importstring import import_item
 
 from .connect import KernelConnectionInfo
-from .dependentkernelmanager import DependentKernelManager
+from .dependentkernelmanager import AsyncIOLoopDependentKernelManager
 from .iant_debug import iant_debug
 from .kernelspec import NATIVE_KERNEL_NAME, KernelSpecManager
 from .manager import KernelManager
@@ -99,7 +99,7 @@ class MultiKernelManager(LoggingConfigurable):
                 #import pdb; pdb.set_trace()
                 kwargs["shell_port"] = int(iant_botch_shell_port)
                 # parent kernel manager?
-                km = DependentKernelManager(*args, **kwargs)
+                km = AsyncIOLoopDependentKernelManager(*args, **kwargs)
                 return km
 
 
