@@ -6,6 +6,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import socket
 import typing as t
 import uuid
@@ -251,7 +252,13 @@ class MultiKernelManager(LoggingConfigurable):
         """
         return getattr(self, "use_pending_kernels", False)
 
-    async def _async_start_kernel(self, *, kernel_name: str | None = None, **kwargs: t.Any) -> str:
+    async def _async_start_kernel(
+        self,
+        *,
+        kernel_name: str | None = None,
+        connection_info: KernelConnectionInfo | None,
+        **kwargs: t.Any,
+    ) -> str:
         """Start a new kernel.
 
         The caller can pick a kernel_id by passing one in as a keyword arg,
@@ -259,6 +266,27 @@ class MultiKernelManager(LoggingConfigurable):
 
         The kernel ID for the newly started kernel is returned.
         """
+        if connection_info is not None:
+            kernel_id = self.new_kernel_id()
+            connection_file = os.path.join(self.connection_dir, "kernel-%s.json" % kernel_id)
+            km = self.kernel_manager_factory(
+                connection_file=connection_file,
+                parent=self,
+                log=self.log,
+                owns_kernel=False,
+            )
+            km.load_connection_info(connection_info)
+            km.write_connection_file()
+            km.last_activity = utcnow()
+            km.execution_state = "idle"
+            km.connections = 1   # Or maybe zero ?
+            km.kernel_id = kernel_id
+            km.kernel_name = connection_info["kernel_name"]
+            km.ready.set_result(None)
+            self.kernel_id_to_connection_file[kernel_id] = connection_file
+            self._kernels[kernel_id] = km
+            return kernel_id
+
         km, kernel_name, kernel_id = self.pre_start_kernel(kernel_name, kwargs)
         if not isinstance(km, KernelManager):
             self.log.warning(  # type:ignore[unreachable]
